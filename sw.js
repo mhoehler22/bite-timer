@@ -1,7 +1,7 @@
 // Bite Timer service worker: keeps the app working offline.
 // Network first, so updates show up whenever there's a connection; the cache is the fallback.
 // The file list comes from index.html itself, so adding a creature or home never needs a change here.
-const CACHE = 'bite-timer-v2';
+const CACHE = 'bite-timer-v3';
 
 async function precache() {
   const cache = await caches.open(CACHE);

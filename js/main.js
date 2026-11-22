@@ -1,5 +1,5 @@
 /* Bite Timer: screens and wiring.
-   Who's coming -> what color -> what name -> dinner -> all done -> My Rooms book. */
+   Who's eating (pick a child) -> who's coming -> what color -> what name -> dinner -> all done -> the child's book. */
 (function (BT) {
   const U = BT.util, A = BT.art, $ = U.$, $$ = U.$$;
   const St = BT.store, D = BT.decorator, Sc = BT.scene, T = BT.timer, Au = BT.audio, F = BT.fx;
@@ -11,7 +11,8 @@
     autoPaused: false, grownPaused: false, names: [], whoSet: [],
     visiting: null, doneRoom: null
   };
-  const dur = () => FAST ? 3 : St.data.settings.dur;
+  const dur = () => FAST ? 3 : ((St.kid() || {}).dur || 15);
+  const kidName = () => ((St.kid() || {}).name || '').trim();
   const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 
   /* ---------- screens and little helpers ---------- */
@@ -64,10 +65,90 @@
   };
   const hostId = () => state.room && state.room.creature;
 
+  /* ---------- 0. Who's eating? (each child has their own rooms) ---------- */
+  function goKids() {
+    show('kids');
+    const kids = St.kids();
+    $('#kid-cards').innerHTML = kids.map(k => {
+      const av = St.avatar(k);
+      const n = k.book.length;
+      return `<button class="kid" type="button" data-id="${k.id}" style="background:${A.light(A.color(k.color), 0.62)}">` +
+        creatureSVG(av.creature, av.color) + `<b>${U.esc(k.name)}</b>` +
+        `<small>${St.hasOpenDinner(k) ? '🍽️ dinner waiting!' : '⭐ ' + n + ' room' + (n === 1 ? '' : 's')}</small></button>`;
+    }).join('') + `<button class="kid add" type="button" id="kid-add"><span class="plus">＋</span><b>Add a child</b></button>`;
+    $('#kids-hint').textContent = kids.length ? 'Tap your name!' : 'Grown-ups: tap ＋ to add each child who uses Bite Timer';
+  }
+  $('#kid-cards').addEventListener('click', e => {
+    const c = e.target.closest('.kid');
+    if (!c) return;
+    Au.unlock();
+    if (c.id === 'kid-add') { openAddKid('kids'); return; }
+    const k = St.setActive(c.dataset.id);
+    if (!k) return;
+    F.squish(c);
+    talk(St.avatar(k).creature, 'hello', 3);
+    state.whoSet = [];
+    setTimeout(enterKid, 280);
+  });
+  // After picking a child: offer to finish their open dinner, otherwise on to "Who's coming to dinner?"
+  function enterKid() {
+    goWho(true);
+    const cur = St.checkCurrent();
+    if (cur && BT.homes[cur.home] && BT.creatures[cur.creature]) {
+      ask(`Keep going with ${D.title(cur)}?`, [{ label: '▶ Keep going', value: true }, { label: '✨ New dinner', value: false }], creatureSVG(cur.creature, cur.color))
+        .then(keep => {
+          Au.unlock();
+          if (keep) enterDinner(cur, false);
+          else { St.finishCurrent(); goWho(true); }
+        });
+    }
+  }
+
+  /* Add a child (from the "Who's eating?" screen or the grown-up panel) */
+  let akColor = 'pink', akFrom = 'kids';
+  function renderAkColors() {
+    $('#ak-colors').innerHTML = A.COLORS.map(c => `<button class="sw${c.id === akColor ? ' on' : ''}" type="button" data-c="${c.id}" style="background:${c.hex}" aria-label="${c.label}"></button>`).join('');
+    $('#ak-preview').innerHTML = creatureSVG('sloth', akColor);
+  }
+  function openAddKid(from) {
+    akFrom = from;
+    const used = St.kids().map(k => k.color);
+    const free = A.COLORS.filter(c => !used.includes(c.id));
+    akColor = (free.length ? U.pick(free) : U.pick(A.COLORS)).id;
+    $('#ak-name').value = '';
+    $('#ak-add').disabled = true;
+    renderAkColors();
+    if (from === 'grown') $('#grown').hidden = true;
+    $('#addkid').hidden = false;
+    setTimeout(() => $('#ak-name').focus(), 60);
+  }
+  function closeAddKid() {
+    $('#addkid').hidden = true;
+    if (akFrom === 'grown') { renderKidsList(); $('#grown').hidden = false; }
+  }
+  $('#ak-colors').addEventListener('click', e => {
+    const b = e.target.closest('.sw');
+    if (!b) return;
+    akColor = b.dataset.c;
+    renderAkColors();
+    F.squish($('#ak-preview'));
+  });
+  $('#ak-name').addEventListener('input', () => { $('#ak-add').disabled = !$('#ak-name').value.trim(); });
+  $('#ak-name').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('#ak-add').disabled) $('#ak-add').click(); });
+  $('#ak-cancel').onclick = closeAddKid;
+  $('#ak-add').onclick = () => {
+    const name = $('#ak-name').value.trim();
+    if (!name) return;
+    const k = St.addKid(name, akColor);
+    closeAddKid();
+    toast(`Added ${k.name}!`);
+    if (state.screen === 'kids') goKids();
+  };
+
   /* ---------- 1. Who's coming to dinner? ---------- */
   function pickFour(avoid = []) {
     const all = Object.keys(BT.creatures);
-    const recent = St.data.recent;
+    const recent = St.kid() ? St.kid().recent : [];
     let pool = all.length - avoid.length >= 4 ? all.filter(id => !avoid.includes(id)) : all.slice();
     const chosen = [];
     while (chosen.length < Math.min(4, all.length) && pool.length) {
@@ -88,6 +169,9 @@
   }
 
   function goWho(reroll) {
+    const k = St.kid();
+    if (!k) { goKids(); return; }
+    $('#who-kid').textContent = `👤 ${k.name}`;
     if (reroll || !state.whoSet.length) renderWho();
     show('who');
   }
@@ -102,6 +186,7 @@
   });
   $('#who-shuffle').onclick = () => { Au.unlock(); Au.tap('sparkle'); renderWho(state.whoSet); };
   $('#who-book').onclick = () => { Au.unlock(); goBook(); };
+  $('#who-kid').onclick = () => { Au.unlock(); Au.tap('boop'); goKids(); };
 
   /* ---------- 2. What color? ---------- */
   function goColor() { show('color'); renderColor(false); }
@@ -220,7 +305,8 @@
     Au.chime();
     const s = St.data.settings;
     setTimeout(() => talk(hostId(), 'excited', 3, 0.3, false), 800);
-    if (s.cue) setTimeout(() => Au.say(`Bite time${s.kid ? ', ' + s.kid : ''}!`), Au.babbleOn ? 1700 : 900);
+    const who = kidName();
+    if (s.cue) setTimeout(() => Au.say(`Bite time${who ? ', ' + who : ''}!`), Au.babbleOn ? 1700 : 900);
     clearInterval(state.remindTimer);
     state.remindTimer = setInterval(() => {
       if (!state.waiting) return;
@@ -255,12 +341,13 @@
     $('#ring-wrap').classList.toggle('paused', p);
   }
   function renderDur() {
-    $$('#dur-seg button').forEach(b => b.classList.toggle('on', +b.dataset.dur === St.data.settings.dur));
+    const d = (St.kid() || {}).dur || 15;
+    $$('#dur-seg button').forEach(b => b.classList.toggle('on', +b.dataset.dur === d));
   }
 
   function startDinner() {
     const homeId = BT.creatures[state.pick.creature].home;
-    const last = St.data.book.find(r => r.home === homeId);
+    const last = St.book().find(r => r.home === homeId);
     const room = D.newRoom(Object.assign({}, state.pick, { lastMood: last ? last.mood : undefined }));
     St.startRoom(room);
     enterDinner(room, true);
@@ -293,7 +380,7 @@
     F.shower();
     Au.jingle();
     setTimeout(() => talk(hostId(), 'excited', 5, 0.3, false), 600);
-    const kid = (St.data.settings.kid || '').trim();
+    const kid = kidName();
     const cheer = CHEERS[Math.max(0, n / 5 - 1) % CHEERS.length];
     F.banner(`${n} bites! ${cheer}${kid ? ', ' + kid : ''}!`);
   }
@@ -335,7 +422,8 @@
   $('#dur-seg').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;
-    St.data.settings.dur = +b.dataset.dur;
+    const k = St.kid();
+    if (k) k.dur = +b.dataset.dur;
     St.save();
     renderDur();
     if (T.state === 'running') T.start(dur());
@@ -372,7 +460,7 @@
     T.stop(); hideBite(); BT.wake.off();
     const room = state.room;
     state.room = null;
-    if (discard) { St.data.current = null; St.save(); goWho(true); return; }
+    if (discard) { St.dropCurrent(); goWho(true); return; }
     const host = room.items.find(i => i.t === 'host');
     if (host) { host.sleepy = true; Sc.redraw(state.svg, room, host); }
     Au.tap('yawn');
@@ -398,14 +486,16 @@
   function loadThumb(img) {
     const id = img.dataset.id;
     if (!thumbs.has(id)) {
-      const r = St.data.book.find(x => x.id === id);
+      const r = St.book().find(x => x.id === id);
       if (r) thumbs.set(id, Sc.dataURL(r));
     }
     if (thumbs.has(id)) img.src = thumbs.get(id);
   }
   function goBook() {
     show('book');
-    const book = St.data.book;
+    const book = St.book();
+    const k = St.kid();
+    $('#book-title').textContent = k ? `${k.name}'s Rooms 📖` : 'My Rooms 📖';
     $('#book-empty').hidden = book.length > 0;
     $('#book-grid').innerHTML = book.map(r =>
       `<button class="bcard" type="button" data-id="${r.id}"><img alt="" data-id="${r.id}">` +
@@ -423,7 +513,7 @@
 
   /* ---------- 7. Visiting a saved room ---------- */
   function visit(id) {
-    const r = St.data.book.find(x => x.id === id);
+    const r = St.book().find(x => x.id === id);
     if (!r) return;
     state.visiting = r;
     show('visit');
@@ -481,14 +571,13 @@
 
   function openGrown() {
     const s = St.data.settings;
-    $('#g-kid').value = s.kid || '';
     $('#g-sound').checked = !s.mute;
     $('#g-remind').checked = !!s.remind;
     $('#g-cue').checked = !!s.cue;
     $('#g-babble').checked = s.babble !== false;
     $('#g-pitch').value = s.pitch || 1.1;
     renderVoices();
-    $('#g-count').textContent = St.data.book.length;
+    renderKidsList();
     $('#g-rooms').hidden = true;
     $('#g-installed').textContent = isStandalone() ? '✓ Installed on this device.' : '';
     $('#grown').hidden = false;
@@ -496,7 +585,6 @@
   }
   function closeGrown() {
     const s = St.data.settings;
-    s.kid = $('#g-kid').value.trim().slice(0, 20);
     s.mute = !$('#g-sound').checked;
     s.remind = $('#g-remind').checked;
     s.cue = $('#g-cue').checked;
@@ -506,9 +594,47 @@
     applyVoice();
     Au.muted = s.mute;
     St.save();
+    $$('#g-kids .g-kid').forEach(row => St.renameKid(row.dataset.id, row.querySelector('input').value));
     $('#grown').hidden = true;
     if (state.grownPaused) { state.grownPaused = false; T.resume(); setPauseLabel(); }
+    // Children may have been added, renamed or removed: refresh what's on screen.
+    if (state.screen === 'kids') goKids();
+    else if (state.screen !== 'dinner' && !St.kid()) goKids();
+    else if (state.screen === 'who') goWho(false);
+    else if (state.screen === 'book') goBook();
   }
+
+  function renderKidsList() {
+    const kids = St.kids();
+    $('#g-kids').innerHTML = kids.length
+      ? kids.map(k => `<div class="g-kid" data-id="${k.id}"><span class="dot" style="background:${A.color(k.color)}"></span>` +
+        `<input value="${U.esc(k.name)}" maxlength="20" autocomplete="off" aria-label="Name"><small>⭐ ${k.book.length}</small>` +
+        `<button class="gbtn" type="button" data-delkid="${k.id}" aria-label="Delete ${U.esc(k.name)}">🗑</button></div>`).join('')
+      : '<p class="small">No children yet.</p>';
+    const k = St.kid();
+    $('#g-rooms-label').textContent = k ? `${k.name}'s rooms: ${k.book.length}` : 'Rooms';
+    $('#g-manage').disabled = !k;
+  }
+  $('#g-kids').addEventListener('change', e => {
+    const row = e.target.closest('.g-kid');
+    if (row && e.target.matches('input')) { St.renameKid(row.dataset.id, e.target.value); renderKidsList(); }
+  });
+  $('#g-kids').addEventListener('click', async e => {
+    const b = e.target.closest('[data-delkid]');
+    if (!b) return;
+    const k = St.kids().find(x => x.id === b.dataset.delkid);
+    if (!k) return;
+    if (state.room && k.id === St.data.active) { toast('Finish dinner first.'); return; }
+    $('#grown').hidden = true;
+    const n = k.book.length;
+    const ok = await ask(`Delete ${k.name}${n ? ` and all ${n} of their rooms` : ''}? This can't be undone.`, [{ label: 'Keep', value: false }, { label: '🗑 Delete', value: true }]);
+    $('#grown').hidden = false;
+    if (!ok) return;
+    St.removeKid(k.id);
+    renderKidsList();
+    toast('Deleted.');
+  });
+  $('#g-addkid').onclick = () => openAddKid('grown');
   $('#g-close').onclick = closeGrown;
 
   function applyVoice() {
@@ -531,21 +657,21 @@
     const prev = [Au.voiceURI, Au.pitch];
     Au.voiceURI = $('#g-voice').value;
     Au.pitch = +$('#g-pitch').value || 1.1;
-    const kid = ($('#g-kid').value || '').trim();
+    const kid = kidName();
     Au.say(`Bite time${kid ? ', ' + kid : ''}! Mochi, Sprinkles, Pudding.`);
     [Au.voiceURI, Au.pitch] = prev;
   };
 
   function renderManage() {
-    $('#g-rooms').innerHTML = St.data.book.length
-      ? St.data.book.map(r => `<div class="g-room"><span>${U.esc(D.title(r))}<br><small>${U.dateLabel(r.startedAt)} · ⭐ ${r.bites}</small></span><button class="gbtn" type="button" data-del="${r.id}">🗑 Delete</button></div>`).join('')
+    $('#g-rooms').innerHTML = St.book().length
+      ? St.book().map(r => `<div class="g-room"><span>${U.esc(D.title(r))}<br><small>${U.dateLabel(r.startedAt)} · ⭐ ${r.bites}</small></span><button class="gbtn" type="button" data-del="${r.id}">🗑 Delete</button></div>`).join('')
       : '<p class="small">No rooms yet.</p>';
   }
   $('#g-manage').onclick = () => { const box = $('#g-rooms'); box.hidden = !box.hidden; if (!box.hidden) renderManage(); };
   $('#g-rooms').addEventListener('click', async e => {
     const b = e.target.closest('[data-del]');
     if (!b) return;
-    const r = St.data.book.find(x => x.id === b.dataset.del);
+    const r = St.book().find(x => x.id === b.dataset.del);
     if (!r) return;
     $('#grown').hidden = true;
     const ok = await ask(`Delete "${D.title(r)}" from My Rooms? This can't be undone.`, [{ label: 'Keep it', value: false }, { label: '🗑 Delete', value: true }]);
@@ -553,7 +679,7 @@
     if (!ok) return;
     St.deleteRoom(r.id);
     thumbs.delete(r.id);
-    $('#g-count').textContent = St.data.book.length;
+    renderKidsList();
     renderManage();
     toast('Deleted.');
   });
@@ -582,9 +708,11 @@
     const f = $('#g-file').files[0];
     if (!f) return;
     try {
-      const n = St.importText(await f.text());
-      toast(n ? `Added ${n} room${n === 1 ? '' : 's'} to My Rooms.` : 'Those rooms are already here.');
-      $('#g-count').textContent = St.data.book.length;
+      const { rooms, kids } = St.importText(await f.text());
+      toast(rooms || kids
+        ? `Added ${rooms} room${rooms === 1 ? '' : 's'}${kids ? ` and ${kids} child${kids === 1 ? '' : 'ren'}` : ''}.`
+        : 'Those rooms are already here.');
+      renderKidsList();
     } catch (err) { toast(err.message || 'That file did not work.'); }
     $('#g-file').value = '';
   };
@@ -595,18 +723,9 @@
     Au.muted = !!St.data.settings.mute;
     applyVoice();
     BT.checkContent();
-    goWho(true);
+    St.fileStale();
+    goKids();
     document.addEventListener('pointerdown', () => Au.unlock(), { capture: true });
-
-    const cur = St.checkCurrent();
-    if (cur && BT.homes[cur.home] && BT.creatures[cur.creature]) {
-      ask(`Keep going with ${D.title(cur)}?`, [{ label: '▶ Keep going', value: true }, { label: '✨ New dinner', value: false }], creatureSVG(cur.creature, cur.color))
-        .then(keep => {
-          Au.unlock();
-          if (keep) enterDinner(cur, false);
-          else { St.finishCurrent(); goWho(true); }
-        });
-    }
 
     if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !U.flag('nosw')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -614,6 +733,6 @@
   }
 
   // Exposed for testing in the browser console.
-  BT.app = { state, show, startDinner, enterDinner, celebrate, goBook, visit, ask };
+  BT.app = { state, show, goKids, goWho, startDinner, enterDinner, celebrate, goBook, visit, ask, openAddKid };
   boot();
 })(window.BT);

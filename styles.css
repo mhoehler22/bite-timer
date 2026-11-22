@@ -80,6 +80,27 @@ button:focus-visible { outline: 4px solid var(--lav); outline-offset: 3px; }
 .squish { animation: uiSquish .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes uiSquish { 30% { transform: scale(1.18, .84); } 60% { transform: scale(.93, 1.08); } }
 
+/* ---------- 0. who's eating (children) ---------- */
+.kids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; width: 100%; max-width: 460px; }
+.kid { border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 5px 0 var(--ink); padding: 6px 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-height: 150px; transition: transform .08s, box-shadow .08s; }
+.kid:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.kid svg { width: 100%; max-width: 130px; height: auto; aspect-ratio: 148 / 134; }
+.kid b { font-size: 26px; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kid small { font-size: 14px; color: var(--ink2); }
+.kid.add { background: rgba(255, 255, 255, .6); border-style: dashed; box-shadow: none; }
+.kid.add .plus { font-size: 56px; line-height: 1; font-weight: 700; color: var(--pink2); }
+.kid.add b { font-size: 20px; }
+.kid-chip { justify-self: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--butter); font-size: 17px; }
+
+/* add-a-child sheet */
+#addkid { z-index: 45; }
+#ask { z-index: 46; }
+.sheet-title { margin: 0; text-align: center; font-size: 26px; }
+.ak-preview { display: flex; justify-content: center; }
+.ak-preview svg { width: 130px; height: auto; }
+.ak-colors { grid-template-columns: repeat(4, 54px); gap: 10px; justify-content: center; margin-top: 6px; }
+.ak-colors .sw { width: 54px; height: 54px; }
+
 /* ---------- 1. who's coming ---------- */
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; width: 100%; max-width: 460px; }
 .card { border-radius: 28px; box-shadow: 0 5px 0 var(--ink); padding: 6px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 0; }
@@ -241,6 +262,12 @@ button:focus-visible { outline: 4px solid var(--lav); outline-offset: 3px; }
 .g-sec { border-top: 2px dashed #E6D6EE; padding-top: 10px; }
 .g-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .small { font-size: 14px; color: var(--ink2); margin: 6px 0 0; line-height: 1.35; }
+.g-kids { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 2px; }
+.g-kid { display: flex; align-items: center; gap: 8px; }
+.g-kid .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); flex: none; }
+.g-kid input { flex: 1; min-width: 0; font: inherit; font-size: 17px; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; color: var(--ink); user-select: text; -webkit-user-select: text; }
+.g-kid small { color: var(--ink2); white-space: nowrap; }
+.gbtn:disabled { opacity: .45; }
 .g-rooms { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 260px; overflow-y: auto; }
 .g-room { display: flex; align-items: center; gap: 8px; }
 .g-room span { flex: 1; font-size: 15px; line-height: 1.2; }

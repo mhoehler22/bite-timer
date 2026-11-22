@@ -2,6 +2,7 @@
 
 A cozy, pastel kawaii dinner helper for kids. A gentle timer counts down, a music-box chime plays, and a big **"I took a bite! ✨"** button pops up. Every bite adds a surprise decoration or a visiting friend to tonight's room.
 
+- **Who's eating?** Each child has a profile with their own rooms, so siblings can share one phone.
 - **Before dinner:** pick tonight's creature (sloth, kitten, puppy, unicorn, bunny, panda, penguin or baby dragon), choose its color, and give it a name. Pick a suggested name, or spell your own on a big ABC board.
 - **During dinner:** each creature has its own home, from a treehouse to a cloud castle. Rewards fill it as the bites add up. Tap anything to make it squish, purr or sparkle. Every 5 bites brings a shower of hearts and stars.
 - **After dinner:** finished rooms are saved in **My Rooms** to visit later.

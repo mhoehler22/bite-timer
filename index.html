@@ -22,11 +22,23 @@
 <body>
 <div id="app">
 
+  <!-- 0. Who's eating? (pick a child) -->
+  <section class="screen" id="s-kids">
+    <header class="bar">
+      <span></span>
+      <span></span>
+      <button class="gear" data-gear type="button" aria-label="Grown-up settings (press and hold)">⚙️</button>
+    </header>
+    <h1 class="title">Who's eating?</h1>
+    <div class="kids" id="kid-cards"></div>
+    <p class="hint" id="kids-hint">Grown-ups: tap ＋ to add each child</p>
+  </section>
+
   <!-- 1. Who's coming to dinner? -->
   <section class="screen" id="s-who">
     <header class="bar">
       <button class="pill" id="who-book" type="button">📖 My Rooms</button>
-      <span></span>
+      <button class="pill kid-chip" id="who-kid" type="button"></button>
       <button class="gear" data-gear type="button" aria-label="Grown-up settings (press and hold)">⚙️</button>
     </header>
     <h1 class="title">Who's coming<br>to dinner?</h1>
@@ -112,7 +124,7 @@
   <section class="screen" id="s-book">
     <header class="bar">
       <button class="pill" data-go="who" type="button">◀ Home</button>
-      <h1 class="bar-title">My Rooms 📖</h1>
+      <h1 class="bar-title" id="book-title">My Rooms 📖</h1>
       <span></span>
     </header>
     <div class="book" id="book-grid"></div>
@@ -144,6 +156,24 @@
   </div>
 </div>
 
+<!-- Add a child -->
+<div class="sheet" id="addkid" hidden>
+  <div class="sheet-card">
+    <h2 class="sheet-title">Add a child</h2>
+    <div class="ak-preview" id="ak-preview"></div>
+    <label class="field">Name
+      <input id="ak-name" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="Their first name">
+    </label>
+    <div class="field">Favorite color
+      <div class="swatches ak-colors" id="ak-colors"></div>
+    </div>
+    <div class="ask-btns">
+      <button class="big go" id="ak-add" type="button" disabled>＋ Add</button>
+      <button class="big soft" id="ak-cancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Simple questions (resume, all done, delete) -->
 <div class="sheet" id="ask" hidden>
   <div class="sheet-card">
@@ -157,11 +187,13 @@
 <div class="sheet" id="grown" hidden>
   <div class="sheet-card grown-card">
     <h2>Grown-ups</h2>
-    <label class="field">Child's name, for cheers
-      <input id="g-kid" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="e.g. her first name">
-    </label>
+    <div class="g-kids-sec">
+      <div class="g-row"><b>Children</b><button class="gbtn" id="g-addkid" type="button">＋ Add a child</button></div>
+      <div id="g-kids" class="g-kids"></div>
+      <p class="small">Each child has their own rooms and timer length. Their name is used in cheers.</p>
+    </div>
     <label class="tog"><input type="checkbox" id="g-sound"> Sounds</label>
-    <label class="tog"><input type="checkbox" id="g-remind"> Gentle reminder chime if she waits</label>
+    <label class="tog"><input type="checkbox" id="g-remind"> Gentle reminder chime if they wait</label>
     <label class="tog"><input type="checkbox" id="g-babble"> Creatures babble in their own cute voices</label>
     <label class="tog"><input type="checkbox" id="g-cue"> Also say "Bite time!" in the reading voice</label>
     <div class="g-sec">
@@ -175,7 +207,7 @@
       <p class="small"><b>iPhone tip:</b> nicer voices are a free download. Settings → Accessibility → Spoken Content → Voices → English, then download one marked <b>Enhanced</b> or <b>Premium</b> (try Ava or Zoe). If it shows up in the list above, pick it.</p>
     </div>
     <div class="g-sec">
-      <div class="g-row"><span>My Rooms: <b id="g-count">0</b> saved</span><button class="gbtn" id="g-manage" type="button">Manage</button></div>
+      <div class="g-row"><span id="g-rooms-label">Rooms</span><button class="gbtn" id="g-manage" type="button">Manage</button></div>
       <div id="g-rooms" class="g-rooms" hidden></div>
     </div>
     <div class="g-sec">
@@ -184,7 +216,7 @@
         <button class="gbtn" id="g-import" type="button">Load backup</button>
       </span></div>
       <input type="file" id="g-file" accept="application/json,.json" hidden>
-      <p class="small">Rooms are saved only on this device. A backup file lets you move them to a new phone.</p>
+      <p class="small">Rooms are saved only on this device. A backup file (everyone's rooms) lets you move them to a new phone.</p>
     </div>
     <details class="g-sec">
       <summary>Put Bite Timer on the home screen</summary>
