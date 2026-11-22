@@ -1,15 +1,15 @@
-/* Big furniture: the larger pieces that go in each home's "big" spots (anchor 'big').
+/* Big furniture: the larger pieces. They fill each home's "big" spots first, then ordinary floor spots.
    Each piece lists the homes it belongs in. Drawn with feet on y = 0, about 80 wide and 50-110 tall. */
 (function (BT) {
   const A = BT.art, { O, O2, PLUM } = A;
-  const add = d => BT.addDecor(Object.assign({ anchors: ['big'], origin: 'bottom' }, d));
+  const add = d => BT.addDecor(Object.assign({ anchors: ['big', 'floor'], origin: 'bottom' }, d));
   const WOOD = '#E7C49F', GOLD = '#FFE08A', GREEN = '#A9E5BB', GREEN2 = '#8FDCA8';
   const INDOOR = ['livingroom', 'treehouse'];
   const feet = (xs, y = -7, h = 7) => xs.map(x => `<rect x="${x - 3}" y="${y}" width="6" height="${h}" rx="2" fill="${PLUM}"/>`).join('');
   const drawOther = (id, p) => BT.decor[id] ? BT.decor[id].draw(p) : '';
 
   add({
-    id: 'armchair', homes: ['livingroom', 'treehouse', 'bamboo'], h: 82, sound: 'squish',
+    id: 'armchair', homes: ['livingroom', 'treehouse', 'bamboo', 'bakery'], h: 82, sound: 'squish',
     draw: p => `<path d="M-34,-38 L-34,-62 Q-34,-80 -16,-80 L16,-80 Q34,-80 34,-62 L34,-38Z" ${A.f(p.c)} ${O}/>` +
       [-14, 0, 14].map(x => `<circle cx="${x}" cy="-47" r="2" fill="${p.d}"/>`).join('') +
       `<rect x="-34" y="-42" width="68" height="22" rx="10" ${A.f(p.l)} ${O}/>` +
@@ -49,7 +49,7 @@
   });
 
   add({
-    id: 'piano', homes: ['livingroom', 'bakery', 'castle'], h: 88, sound: 'sparkle',
+    id: 'piano', homes: ['livingroom', 'bakery', 'castle', 'cove'], h: 88, sound: 'sparkle',
     draw: p => `<rect x="-42" y="-86" width="84" height="48" rx="10" ${A.f(p.c)} ${O}/>` +
       `<rect x="-20" y="-80" width="40" height="15" rx="3" fill="#FFFBF2" ${O2}/>` +
       A.line('M-10.5,-69 v-8 l6,-2 v8 M8.5,-71 v-6', 1.4) +
@@ -69,7 +69,7 @@
   });
 
   add({
-    id: 'toyChest', homes: ['livingroom', 'treehouse', 'castle'], h: 72, sound: 'boing',
+    id: 'toyChest', homes: ['livingroom', 'treehouse', 'castle', 'snow'], h: 72, sound: 'boing',
     draw: p => `<circle cx="20" cy="-62" r="10" fill="${p.acc}" ${O}/>` + A.line('M11,-65 q9,6 18,0', 1.8, '#fff') +
       `<circle cx="-24" cy="-64" r="6" fill="#E7C49F" ${O2}/><circle cx="-12" cy="-65" r="6" fill="#E7C49F" ${O2}/>` +
       `<rect x="-38" y="-44" width="76" height="40" rx="8" ${A.f(p.c)} ${O}/>` +
@@ -87,7 +87,7 @@
   });
 
   add({
-    id: 'roundTable', homes: ['livingroom', 'bakery', 'garden', 'castle'], h: 70, sound: 'chime',
+    id: 'roundTable', homes: ['livingroom', 'bakery', 'garden', 'castle', 'snow', 'bamboo'], h: 70, sound: 'chime',
     draw: p => `<path d="M-42,-46 Q-44,-24 -40,-6 Q-34,-1 -28,-6 Q-21,-1 -14,-6 Q-7,-1 0,-6 Q7,-1 14,-6 Q21,-1 28,-6 Q34,-1 40,-6 Q44,-24 42,-46Z" ${A.f(p.c)} ${O}/>` +
       `<ellipse cx="0" cy="-46" rx="42" ry="9" fill="${p.l}" ${O}/>` +
       `<g transform="translate(-14 -47) scale(.42)">${drawOther('teapot', A.pack(p.acc, p.c))}</g>` +
@@ -180,7 +180,7 @@
 
   /* ---- strawberry garden ---- */
   add({
-    id: 'bench', homes: ['garden'], h: 68, sound: 'boop',
+    id: 'bench', homes: ['garden', 'snow'], h: 68, sound: 'boop',
     draw: p => `<rect x="-38" y="-66" width="6" height="46" fill="${p.d}" ${O2}/><rect x="32" y="-66" width="6" height="46" fill="${p.d}" ${O2}/>` +
       `<rect x="-44" y="-66" width="88" height="12" rx="5" ${A.f(p.c)} ${O}/>` +
       `<rect x="-44" y="-50" width="88" height="10" rx="5" ${A.f(p.c)} ${O}/>` +
@@ -242,7 +242,7 @@
 
   /* ---- cloud castle ---- */
   add({
-    id: 'throne', homes: ['castle'], h: 112, sound: 'sparkle',
+    id: 'throne', homes: ['castle', 'cove'], h: 112, sound: 'sparkle',
     draw: p => `<path d="M-30,-40 L-30,-84 Q-30,-104 0,-104 Q30,-104 30,-84 L30,-40Z" ${A.f(p.c)} ${O}/>` +
       `<path d="M-23,-44 L-23,-82 Q-23,-97 0,-97 Q23,-97 23,-82 L23,-44" fill="none" stroke="${GOLD}" stroke-width="3"/>` +
       `<g transform="translate(0 -101) scale(.5)">${drawOther('crown', A.pack(p.acc))}</g>` +

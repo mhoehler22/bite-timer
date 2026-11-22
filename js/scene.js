@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
   const LAYER = { wall: 1, hang: 2, air: 3, shelf: 4, floor: 5, big: 5 };
 
-  S.z = it => (LAYER[it.a] || 5) * 1000 + it.y;
+  S.z = it => (LAYER[it.a] || 5) * 1000 + it.y + (it.t === 'host' ? 30 : 0); // the host stays in front
 
   // A decoration's drawing, shifted so its origin matches the spot it sits in.
   function decorArt(it) {
