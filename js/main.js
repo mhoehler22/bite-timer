@@ -652,6 +652,31 @@
       list.map(v => `<option value="${U.esc(v.voiceURI)}"${v.voiceURI === cur ? ' selected' : ''}>${Au.voiceScore(v) >= 6 ? '⭐ ' : ''}${U.esc(v.name)} (${U.esc(v.lang)})</option>`).join('');
   }
   if ('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', () => { if (!$('#grown').hidden) renderVoices(); });
+  // Sound check: play the chime, listen to the app's own output, and say what's going on.
+  $('#g-soundcheck').onclick = () => {
+    Au.unlock();
+    const msg = $('#g-soundmsg');
+    msg.hidden = false;
+    if (!$('#g-sound').checked) { msg.textContent = 'Sounds are switched off. Tick "Sounds" above, then try again.'; return; }
+    const wasMuted = Au.muted;
+    Au.muted = false;
+    Au.chime();
+    msg.textContent = 'Listening…';
+    let peak = 0;
+    const t0 = performance.now();
+    const listen = () => {
+      peak = Math.max(peak, Au.level());
+      if (performance.now() - t0 < 1500) { requestAnimationFrame(listen); return; }
+      Au.muted = wasMuted;
+      const st = Au.state();
+      msg.textContent = st === 'unsupported' ? "This browser can't play the app's sounds."
+        : peak > 0.003 ? "✓ The app is playing sound. If you can't hear the chime, turn up this device's volume and make sure it isn't muted."
+          : st !== 'running' ? 'The browser is holding sound back. Tap anywhere on the screen, then try the sound check again.'
+            : 'No sound came out. Close the app completely, reopen it, and try again.';
+    };
+    requestAnimationFrame(listen);
+  };
+
   $('#g-test').onclick = () => {
     Au.unlock();
     const prev = [Au.voiceURI, Au.pitch];

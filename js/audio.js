@@ -3,7 +3,7 @@
    "playback" audio, so unlock() does that (or plays a silent clip on older iOS). */
 (function (BT) {
   const S = BT.audio = { muted: false };
-  let ctx = null, master = null, echoIn = null, silentEl = null;
+  let ctx = null, master = null, echoIn = null, silentEl = null, meter = null;
 
   const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -15,6 +15,8 @@
     master.gain.value = 0.55;
     const comp = ctx.createDynamicsCompressor();
     master.connect(comp).connect(ctx.destination);
+    // a level meter, so the grown-up sound check can tell whether the app is really making sound
+    meter = ctx.createAnalyser(); meter.fftSize = 1024; comp.connect(meter);
     // a soft echo for the music-box shimmer
     echoIn = ctx.createGain(); echoIn.gain.value = 0.22;
     const delay = ctx.createDelay(1); delay.delayTime.value = 0.19;
@@ -56,6 +58,20 @@
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
   });
+
+  // Browsers only allow sound after certain kinds of input. On touchscreens that's the finger
+  // lifting, not touching down, so listen for all of them (Chromebook touchscreens need this).
+  ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(type =>
+    document.addEventListener(type, () => S.unlock(), { capture: true, passive: true }));
+
+  // For the grown-up sound check: is audio running, and is the app actually putting out sound?
+  S.state = () => ctx ? ctx.state : (window.AudioContext || window.webkitAudioContext ? 'not started' : 'unsupported');
+  S.level = () => {
+    if (!meter) return 0;
+    const a = new Float32Array(meter.fftSize);
+    meter.getFloatTimeDomainData(a);
+    return Math.sqrt(a.reduce((sum, v) => sum + v * v, 0) / a.length);
+  };
 
   // Play now if audio is running; otherwise wake it first (iOS can start suspended).
   function play(fn) {
@@ -137,7 +153,7 @@
     peep: t => { glide('sine', 1500, 1900, t, 0.07, 0.15); glide('sine', 1500, 2100, t + 0.11, 0.08, 0.15); },
     rawr: t => glide('sawtooth', 340, 190, t, 0.38, 0.16, { lowpass: 900, wobble: 30, depth: 0.7, attack: 0.03 })
   };
-  let lastTap = 0;
+  let lastTap = -1;
   S.tap = name => play(t => {
     if (t - lastTap < 0.12) return; // don't let fast taps pile up
     lastTap = t;
@@ -176,6 +192,7 @@
   S.say = (text, opts = {}) => {
     if (S.muted || !('speechSynthesis' in window)) { if (opts.onend) opts.onend(); return; }
     try {
+      const busy = speechSynthesis.speaking || speechSynthesis.pending;
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       const v = S.voice();
@@ -184,7 +201,9 @@
       u.pitch = opts.pitch || S.pitch;
       u.volume = 1;
       if (opts.onend) { let done = false; const fin = () => { if (!done) { done = true; opts.onend(); } }; u.onend = fin; u.onerror = fin; setTimeout(fin, 2500); }
-      speechSynthesis.speak(u);
+      // Chrome can silently drop speech that starts right after a cancel, so give it a moment.
+      const go = () => { try { speechSynthesis.resume(); } catch (e) { /* fine */ } speechSynthesis.speak(u); };
+      if (busy) setTimeout(go, 80); else go();
     } catch (e) { if (opts.onend) opts.onend(); }
   };
 
