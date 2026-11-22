@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Bite Timer</title>
+<meta name="description" content="A cozy kawaii dinner helper: take a bite, decorate tonight's room.">
+<meta name="theme-color" content="#FFE4EF">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bite Timer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 1. Who's coming to dinner? -->
+  <section class="screen" id="s-who">
+    <header class="bar">
+      <button class="pill" id="who-book" type="button">📖 My Rooms</button>
+      <span></span>
+      <button class="gear" data-gear type="button" aria-label="Grown-up settings (press and hold)">⚙️</button>
+    </header>
+    <h1 class="title">Who's coming<br>to dinner?</h1>
+    <div class="cards" id="who-cards"></div>
+    <button class="pill soft" id="who-shuffle" type="button">🔀 Other friends</button>
+    <p class="hint">Grown-ups: press and hold ⚙️ for settings</p>
+  </section>
+
+  <!-- 2. What color? -->
+  <section class="screen" id="s-color">
+    <header class="bar"><button class="pill" data-go="who" type="button">◀ Back</button></header>
+    <h1 class="title">What color?</h1>
+    <div class="preview" id="color-preview"></div>
+    <div class="swatches" id="swatches"></div>
+    <button class="pill soft" id="color-surprise" type="button">🌈 Surprise me!</button>
+    <button class="big go" id="color-next" type="button">Next ▶</button>
+  </section>
+
+  <!-- 3. What's their name? -->
+  <section class="screen" id="s-name">
+    <header class="bar"><button class="pill" data-go="color" type="button">◀ Back</button></header>
+    <h1 class="title">What's their name?</h1>
+    <div class="preview small" id="name-preview"></div>
+    <div class="chosen" id="name-chosen">?</div>
+    <div class="chips" id="name-chips"></div>
+    <div class="row">
+      <button class="pill soft" id="name-more" type="button">🔀 More names</button>
+      <button class="pill soft" id="name-own" type="button">✏️ My own name</button>
+    </div>
+    <button class="big go" id="name-go" type="button" disabled>Let's eat! 🍽️</button>
+  </section>
+
+  <!-- 4. Dinner -->
+  <section class="screen" id="s-dinner">
+    <header class="bar">
+      <div class="stars" id="stars"><span>⭐</span><b id="bite-count">0</b></div>
+      <div class="room-title" id="room-title"></div>
+      <button class="pill done" id="all-done" type="button">All done 🎉</button>
+    </header>
+    <div class="dinner-main">
+      <div class="stage" id="stage"></div>
+      <div class="ring-wrap" id="ring-wrap">
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFB7D5"/><stop offset=".5" stop-color="#CDB4F6"/><stop offset="1" stop-color="#A9EEC9"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="100" cy="100" r="84"/>
+          <circle class="prog" id="ring-prog" cx="100" cy="100" r="84"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-num" id="ring-num">15</div>
+          <svg class="ring-face" id="ring-face" viewBox="-20 -10 40 20" aria-hidden="true"></svg>
+        </div>
+        <button class="bite" id="bite-btn" type="button" hidden>
+          <span class="bite-ico">😋</span><span>I took a bite! ✨</span>
+        </button>
+      </div>
+    </div>
+    <footer class="grown">
+      <div class="seg" id="dur-seg">
+        <button data-dur="10" type="button">10s</button><button data-dur="15" type="button">15s</button><button data-dur="20" type="button">20s</button>
+      </div>
+      <button class="gbtn" id="pause-btn" type="button">⏸ Pause</button>
+      <button class="gear small" data-gear type="button" aria-label="Grown-up settings (press and hold)">⚙️</button>
+    </footer>
+  </section>
+
+  <!-- 5. All done -->
+  <section class="screen" id="s-done">
+    <h1 class="title" id="done-title">What a cozy dinner!</h1>
+    <div class="stage framed" id="done-stage"></div>
+    <p class="done-stars" id="done-stars"></p>
+    <p class="hint">Saved in My Rooms 📖</p>
+    <div class="row">
+      <button class="big soft" id="done-book" type="button">📖 My Rooms</button>
+      <button class="big go" id="done-home" type="button">🏠 Home</button>
+    </div>
+  </section>
+
+  <!-- 6. My Rooms book -->
+  <section class="screen" id="s-book">
+    <header class="bar">
+      <button class="pill" data-go="who" type="button">◀ Home</button>
+      <h1 class="bar-title">My Rooms 📖</h1>
+      <span></span>
+    </header>
+    <div class="book" id="book-grid"></div>
+    <p class="empty" id="book-empty" hidden>Your rooms will live here!<br>Finish a dinner to save your first one. 🏠</p>
+  </section>
+
+  <!-- 7. Visiting a saved room -->
+  <section class="screen" id="s-visit">
+    <header class="bar">
+      <button class="pill" data-go="book" type="button">◀ Back</button>
+      <h1 class="bar-title" id="visit-title"></h1>
+      <span></span>
+    </header>
+    <div class="stage framed" id="visit-stage"></div>
+    <p class="done-stars" id="visit-meta"></p>
+    <p class="hint">Tap anything to say hi! 💕</p>
+  </section>
+</div>
+
+<!-- The child's own name: a big ABC board -->
+<div class="sheet" id="letters" hidden>
+  <div class="sheet-card kid">
+    <div class="spell"><span id="spell-text"></span><button class="round" id="spell-say" type="button" aria-label="Say it">🔊</button></div>
+    <div class="keys" id="keys"></div>
+    <div class="row">
+      <button class="pill soft" id="spell-cancel" type="button">✖ Close</button>
+      <button class="big go" id="spell-done" type="button" disabled>✓ That's it!</button>
+    </div>
+  </div>
+</div>
+
+<!-- Simple questions (resume, all done, delete) -->
+<div class="sheet" id="ask" hidden>
+  <div class="sheet-card">
+    <div class="ask-art" id="ask-art"></div>
+    <p class="ask-text" id="ask-text"></p>
+    <div class="ask-btns" id="ask-btns"></div>
+  </div>
+</div>
+
+<!-- Grown-up settings -->
+<div class="sheet" id="grown" hidden>
+  <div class="sheet-card grown-card">
+    <h2>Grown-ups</h2>
+    <label class="field">Child's name, for cheers
+      <input id="g-kid" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="e.g. her first name">
+    </label>
+    <label class="tog"><input type="checkbox" id="g-sound"> Sounds</label>
+    <label class="tog"><input type="checkbox" id="g-remind"> Gentle reminder chime if she waits</label>
+    <label class="tog"><input type="checkbox" id="g-cue"> Say "Bite time!" out loud</label>
+    <div class="g-sec">
+      <div class="g-row"><span>My Rooms: <b id="g-count">0</b> saved</span><button class="gbtn" id="g-manage" type="button">Manage</button></div>
+      <div id="g-rooms" class="g-rooms" hidden></div>
+    </div>
+    <div class="g-sec">
+      <div class="g-row"><span>Backup</span><span>
+        <button class="gbtn" id="g-export" type="button">Save backup</button>
+        <button class="gbtn" id="g-import" type="button">Load backup</button>
+      </span></div>
+      <input type="file" id="g-file" accept="application/json,.json" hidden>
+      <p class="small">Rooms are saved only on this device. A backup file lets you move them to a new phone.</p>
+    </div>
+    <details class="g-sec">
+      <summary>Put Bite Timer on the home screen</summary>
+      <p class="small"><b>iPhone / iPad:</b> open this page in Safari, tap the Share button, then <b>Add to Home Screen</b>.</p>
+      <p class="small"><b>Android:</b> open it in Chrome, tap the ⋮ menu, then <b>Install app</b> (or <b>Add to Home screen</b>).</p>
+      <p class="small">Installed, it opens full screen, works without Wi-Fi, and keeps the rooms safe.</p>
+      <p class="small" id="g-installed"></p>
+    </details>
+    <button class="big go" id="g-close" type="button">Close</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<div id="fx" aria-hidden="true"></div>
+
+<!-- core -->
+<script src="js/core/util.js"></script>
+<script src="js/core/art.js"></script>
+<script src="js/core/registry.js"></script>
+<!-- creatures: one file each -->
+<script src="js/creatures/sloth.js"></script>
+<script src="js/creatures/kitten.js"></script>
+<script src="js/creatures/puppy.js"></script>
+<script src="js/creatures/unicorn.js"></script>
+<script src="js/creatures/bunny.js"></script>
+<script src="js/creatures/panda.js"></script>
+<script src="js/creatures/penguin.js"></script>
+<script src="js/creatures/dragon.js"></script>
+<!-- decorations that go anywhere -->
+<script src="js/decor/shared.js"></script>
+<!-- homes (each with its own decorations): one file each -->
+<script src="js/homes/treehouse.js"></script>
+<script src="js/homes/livingroom.js"></script>
+<script src="js/homes/bakery.js"></script>
+<script src="js/homes/cove.js"></script>
+<script src="js/homes/garden.js"></script>
+<script src="js/homes/bamboo.js"></script>
+<script src="js/homes/snow.js"></script>
+<script src="js/homes/castle.js"></script>
+<!-- app -->
+<script src="js/names.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/decorator.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/store.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

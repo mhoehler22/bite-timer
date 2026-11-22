@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bite Timer Phone Preview</title>
+<style>
+  body { margin: 0; padding: 10px; background: #EDE7F2; font: 13px system-ui, sans-serif; color: #5B3A6B; }
+  .wrap { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .dev { flex: none; position: relative; }
+  .dev iframe { border: 0; border-radius: 28px; box-shadow: 0 0 0 8px #5B3A6B; background: #fff; transform-origin: top left; }
+  .dev small { display: block; margin-top: 4px; }
+</style>
+</head>
+<body>
+<!-- Shows the app in phone-sized frames: ?sizes=390x844,844x390&s=0.85&q=fast=1 -->
+<div class="wrap" id="wrap"></div>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const sizes = (qs.get('sizes') || '390x844').split(',').map(s => s.split('x').map(Number));
+  const scale = Number(qs.get('s') || 0.85);
+  const query = qs.get('q') || 'fast=1&nosw=1';
+  const wrap = document.getElementById('wrap');
+  sizes.forEach(([w, h], i) => {
+    const d = document.createElement('div');
+    d.className = 'dev';
+    d.style.width = (w * scale + 16) + 'px';
+    d.style.height = (h * scale + 30) + 'px';
+    d.innerHTML = `<iframe id="f${i}" src="../index.html?${query}" width="${w}" height="${h}" style="transform:scale(${scale})"></iframe>`;
+    wrap.appendChild(d);
+  });
+</script>
+</body>
+</html>
