@@ -5,11 +5,14 @@
 
   BT.addCreature({
     id: 'panda', label: 'Panda', home: 'bamboo', color: 'mint', sound: 'munch',
+    voice: { pitch: 340, wave: 'triangle', speed: 0.85, formant: 1000 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],
         draw: p => {
-          const pc = A.lum(p.c) > 0.9 ? '#C9B5E5' : A.deep(p.c, 0.12);
+          // Patches in the chosen color. Very light colors (cream, yellow) would vanish on the
+          // cream body, so they turn into a warm honey/caramel version of themselves instead.
+          const pc = A.lum(p.c) > 0.88 ? A.deep(A.mix(p.c, '#EDB24A', 0.45), 0.14) : A.deep(p.c, 0.12);
           const eye = x => p.sleepy
             ? A.line(`M${x - 3.6},-45 q3.6,3.4 7.2,0`, 2.1, PLUM)
             : `<circle cx="${x}" cy="-45" r="4.4" fill="#fff"/><circle cx="${x}" cy="-45" r="3" fill="${PLUM}"/><circle cx="${x - 1}" cy="-46.3" r="1.1" fill="#fff"/>`;

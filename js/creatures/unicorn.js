@@ -5,6 +5,7 @@
 
   BT.addCreature({
     id: 'unicorn', label: 'Unicorn', home: 'cove', color: 'lavender', sound: 'sparkle',
+    voice: { pitch: 700, wave: 'sine', speed: 1, formant: 2400, sparkle: true }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

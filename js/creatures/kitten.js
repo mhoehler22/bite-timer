@@ -10,6 +10,7 @@
 
   BT.addCreature({
     id: 'kitten', label: 'Kitten', home: 'livingroom', color: 'pink', sound: 'purr',
+    voice: { pitch: 640, wave: 'triangle', speed: 1.15, formant: 1900 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

@@ -48,9 +48,9 @@
     slots: [
       { a: 'hang', x: 42, y: 38, s: 0.62 }, { a: 'hang', x: 152, y: 42, s: 0.6 }, { a: 'hang', x: 206, y: 38, s: 0.56 }, { a: 'hang', x: 352, y: 40, s: 0.58 },
       { a: 'wall', x: 198, y: 165, s: 0.55 }, { a: 'wall', x: 326, y: 214, s: 0.5 },
-      { a: 'shelf', x: 40, y: 246, s: 0.5 }, { a: 'shelf', x: 112, y: 246, s: 0.5 }, { a: 'shelf', x: 105, y: 197, s: 0.42 },
+      { a: 'shelf', x: 36, y: 246, s: 0.5 }, { a: 'shelf', x: 86, y: 246, s: 0.5 }, { a: 'shelf', x: 105, y: 197, s: 0.42 },
       { a: 'shelf', x: 335, y: 323, s: 0.46 },
-      { a: 'floor', x: 66, y: 332, s: 0.64 }, { a: 'floor', x: 145, y: 322, s: 0.62 }, { a: 'floor', x: 222, y: 320, s: 0.62 }, { a: 'floor', x: 280, y: 338, s: 0.64 },
+      { a: 'floor', x: 66, y: 332, s: 0.64 }, { a: 'big', x: 168, y: 318, s: 0.81 }, { a: 'big', x: 252, y: 316, s: 0.78 }, { a: 'floor', x: 292, y: 346, s: 0.62 },
       { a: 'floor', x: 42, y: 392, s: 0.78 }, { a: 'floor', x: 125, y: 390, s: 0.8 }, { a: 'floor', x: 210, y: 393, s: 0.8 }, { a: 'floor', x: 292, y: 393, s: 0.76 }
     ],
     air: { x: 30, y: 85, w: 320, h: 140 },
@@ -71,8 +71,8 @@
       s += `<rect x="58" y="192" width="94" height="10" rx="5" fill="${m.floor2}" ${O}/>`;
 
       // little wall shelf
-      s += `<path d="M30,255 v12 l10,-12Z M118,255 v12 l10,-12Z" fill="${m.floor2}" ${O2}/>`;
-      s += `<rect x="12" y="246" width="135" height="9" rx="4.5" fill="${m.floor2}" ${O}/>`;
+      s += `<path d="M26,255 v12 l10,-12Z M86,255 v12 l10,-12Z" fill="${m.floor2}" ${O2}/>`;
+      s += `<rect x="12" y="246" width="100" height="9" rx="4.5" fill="${m.floor2}" ${O}/>`;
 
       // ladder
       s += A.limb('M356,64 V292', m.floor2, 6) + A.limb('M388,64 V292', m.floor2, 6);

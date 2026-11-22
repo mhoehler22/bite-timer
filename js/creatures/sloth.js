@@ -22,6 +22,7 @@
 
   BT.addCreature({
     id: 'sloth', label: 'Sloth', home: 'treehouse', color: 'peach', sound: 'yawn',
+    voice: { pitch: 290, wave: 'triangle', speed: 0.7, formant: 1100 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

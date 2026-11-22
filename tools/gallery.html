@@ -41,6 +41,7 @@
 <script src="../js/creatures/penguin.js"></script>
 <script src="../js/creatures/dragon.js"></script>
 <script src="../js/decor/shared.js"></script>
+<script src="../js/decor/furniture.js"></script>
 <script src="../js/homes/treehouse.js"></script>
 <script src="../js/homes/livingroom.js"></script>
 <script src="../js/homes/bakery.js"></script>
@@ -80,7 +81,7 @@
   html = '';
   for (const d of Object.values(BT.decor)) {
     const p = A.pack(A.DECOR[Math.floor(Math.random() * A.DECOR.length)]);
-    const vb = d.origin === 'bottom' ? '-45 -80 90 90' : d.origin === 'top' ? '-45 -5 90 90' : '-45 -45 90 90';
+    const S = Math.max(90, d.h + 14); const vb = d.origin === 'bottom' ? `${-S / 2} ${-S + 8} ${S} ${S}` : d.origin === 'top' ? `${-S / 2} -5 ${S} ${S}` : `${-S / 2} ${-S / 2} ${S} ${S}`;
     html += box(d.draw(p), 80, 80, vb, `${d.id} · ${d.anchors.join('/')}${d.homes ? ' · ' + d.homes.join(',') : ''}`);
   }
   $('#d').innerHTML = html;

@@ -55,6 +55,15 @@
     return `<svg viewBox="-74 -122 148 134" aria-hidden="true">${cr.poses.sit.draw(p)}</svg>`;
   };
 
+  // A creature talks in its own babble voice. If grown-ups turned babble off, it makes its usual sound instead.
+  const talk = (id, mood, n, vol, fallback = true) => {
+    const cr = BT.creatures[id];
+    if (!cr) return;
+    if (Au.babbleOn) Au.babble(cr.voice, { mood, n, vol });
+    else if (fallback) Au.tap(cr.sound);
+  };
+  const hostId = () => state.room && state.room.creature;
+
   /* ---------- 1. Who's coming to dinner? ---------- */
   function pickFour(avoid = []) {
     const all = Object.keys(BT.creatures);
@@ -87,7 +96,7 @@
     const c = e.target.closest('.card');
     if (!c) return;
     const cr = BT.creatures[c.dataset.id];
-    Au.unlock(); Au.tap(cr.sound); F.squish(c);
+    Au.unlock(); talk(cr.id, 'hello'); F.squish(c);
     state.pick = { creature: cr.id, color: cr.color, name: null };
     setTimeout(goColor, 260);
   });
@@ -107,12 +116,14 @@
   $('#swatches').addEventListener('click', e => {
     const b = e.target.closest('.sw');
     if (!b) return;
-    Au.unlock(); Au.note(+b.dataset.i);
+    Au.unlock();
+    if (Au.babbleOn) talk(state.pick.creature, 'happy', 2); else Au.note(+b.dataset.i);
     state.pick.color = b.dataset.c;
     renderColor(true);
   });
   $('#color-surprise').onclick = () => {
     Au.unlock(); Au.tap('sparkle');
+    setTimeout(() => talk(state.pick.creature, 'excited', 3, 0.3, false), 300);
     state.pick.color = U.pick(A.COLORS.filter(c => c.id !== state.pick.color)).id;
     renderColor(true);
     const c = Sc.center($('#color-preview'));
@@ -144,7 +155,7 @@
     if (!b) return;
     Au.unlock();
     state.pick.name = b.textContent;
-    Au.say(b.textContent);
+    Au.say(b.textContent, { onend: () => talk(state.pick.creature, 'happy', 2, 0.25, false) });
     renderChips(); updateChosen(); F.squish($('#name-chosen'));
   });
   $('#name-more').onclick = () => { Au.unlock(); Au.tap('boop'); newNames(); };
@@ -177,7 +188,7 @@
     if (!spell) return;
     state.pick.name = spellName();
     $('#letters').hidden = true;
-    Au.say(state.pick.name);
+    Au.say(state.pick.name, { onend: () => talk(state.pick.creature, 'excited', 3, 0.3, false) });
     renderChips(); updateChosen(); F.squish($('#name-chosen'));
   };
 
@@ -208,11 +219,12 @@
     showBite();
     Au.chime();
     const s = St.data.settings;
-    if (s.cue) setTimeout(() => Au.say(`Bite time${s.kid ? ', ' + s.kid : ''}!`), 900);
+    setTimeout(() => talk(hostId(), 'excited', 3, 0.3, false), 800);
+    if (s.cue) setTimeout(() => Au.say(`Bite time${s.kid ? ', ' + s.kid : ''}!`), Au.babbleOn ? 1700 : 900);
     clearInterval(state.remindTimer);
     state.remindTimer = setInterval(() => {
       if (!state.waiting) return;
-      if (St.data.settings.remind) Au.reminder();
+      if (St.data.settings.remind) { Au.reminder(); setTimeout(() => talk(hostId(), 'question', 2, 0.22, false), 500); }
       const b = $('#bite-btn');
       b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle');
     }, FAST ? 6000 : 20000);
@@ -265,12 +277,13 @@
     BT.wake.on();
     St.persist();
     if (fresh) {
-      Au.tap(BT.creatures[room.creature].sound);
+      talk(room.creature, 'hello', 4);
       setTimeout(() => {
         const host = state.svg.querySelector('.k-host');
         if (host) { const c = Sc.center(host); F.hearts(c.x, c.y - 10, 5); }
       }, 350);
     }
+    else talk(room.creature, 'happy', 3);
     T.start(dur());
     setPauseLabel();
   }
@@ -279,6 +292,7 @@
   function celebrate(n) {
     F.shower();
     Au.jingle();
+    setTimeout(() => talk(hostId(), 'excited', 5, 0.3, false), 600);
     const kid = (St.data.settings.kid || '').trim();
     const cheer = CHEERS[Math.max(0, n / 5 - 1) % CHEERS.length];
     F.banner(`${n} bites! ${cheer}${kid ? ', ' + kid : ''}!`);
@@ -300,6 +314,7 @@
     const node = Sc.add(state.svg, room, item);
     Au.pop();
     setTimeout(() => { const c = Sc.center(node); F.burst(c.x, c.y); }, 160);
+    if (item.t === 'pet') setTimeout(() => talk(item.id, 'hello', 3, 0.28, false), 450);
     setCount(room.bites, true);
     St.save();
     const party = room.bites % 5 === 0;
@@ -361,6 +376,7 @@
     const host = room.items.find(i => i.t === 'host');
     if (host) { host.sleepy = true; Sc.redraw(state.svg, room, host); }
     Au.tap('yawn');
+    setTimeout(() => talk(room.creature, 'sleepy', 4, 0.28, false), 950);
     setTimeout(() => { F.shower(); Au.jingle(); }, 600);
     St.finishCurrent();
     setTimeout(() => showDone(room), 1800);
@@ -414,7 +430,7 @@
     $('#visit-title').textContent = D.title(r);
     Sc.mount($('#visit-stage'), r);
     $('#visit-meta').textContent = `${U.dateLabel(r.startedAt)} · ⭐ ${r.bites} bite${r.bites === 1 ? '' : 's'}`;
-    Au.tap(BT.creatures[r.creature] ? BT.creatures[r.creature].sound : 'chime');
+    talk(r.creature, 'hello', 3);
   }
 
   /* ---------- tapping things in a room ---------- */
@@ -429,6 +445,7 @@
     if (t.classList.contains('item')) {
       const room = getRoom();
       const it = room && room.items.find(i => i.k === t.dataset.k);
+      if (it && it.t !== 'decor' && Au.babbleOn && Math.random() < 0.65) { talk(it.id, it.sleepy ? 'sleepy' : 'happy', 2 + Math.floor(Math.random() * 3)); return; }
       if (it) sound = it.t === 'decor' ? (BT.decor[it.id] || {}).sound : (BT.creatures[it.id] || {}).sound;
     }
     Au.tap(sound || 'chime');
@@ -468,6 +485,9 @@
     $('#g-sound').checked = !s.mute;
     $('#g-remind').checked = !!s.remind;
     $('#g-cue').checked = !!s.cue;
+    $('#g-babble').checked = s.babble !== false;
+    $('#g-pitch').value = s.pitch || 1.1;
+    renderVoices();
     $('#g-count').textContent = St.data.book.length;
     $('#g-rooms').hidden = true;
     $('#g-installed').textContent = isStandalone() ? '✓ Installed on this device.' : '';
@@ -480,12 +500,41 @@
     s.mute = !$('#g-sound').checked;
     s.remind = $('#g-remind').checked;
     s.cue = $('#g-cue').checked;
+    s.babble = $('#g-babble').checked;
+    s.voice = $('#g-voice').value;
+    s.pitch = +$('#g-pitch').value || 1.1;
+    applyVoice();
     Au.muted = s.mute;
     St.save();
     $('#grown').hidden = true;
     if (state.grownPaused) { state.grownPaused = false; T.resume(); setPauseLabel(); }
   }
   $('#g-close').onclick = closeGrown;
+
+  function applyVoice() {
+    const s = St.data.settings;
+    Au.babbleOn = s.babble !== false;
+    Au.voiceURI = s.voice || '';
+    Au.pitch = s.pitch || 1.1;
+  }
+  function renderVoices() {
+    const sel = $('#g-voice');
+    const list = Au.voices();
+    const cur = St.data.settings.voice || '';
+    if (!list.length) { sel.innerHTML = '<option value="">No voices found on this device</option>'; return; }
+    sel.innerHTML = `<option value="">Automatic (${U.esc(list[0].name)})</option>` +
+      list.map(v => `<option value="${U.esc(v.voiceURI)}"${v.voiceURI === cur ? ' selected' : ''}>${Au.voiceScore(v) >= 6 ? '⭐ ' : ''}${U.esc(v.name)} (${U.esc(v.lang)})</option>`).join('');
+  }
+  if ('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', () => { if (!$('#grown').hidden) renderVoices(); });
+  $('#g-test').onclick = () => {
+    Au.unlock();
+    const prev = [Au.voiceURI, Au.pitch];
+    Au.voiceURI = $('#g-voice').value;
+    Au.pitch = +$('#g-pitch').value || 1.1;
+    const kid = ($('#g-kid').value || '').trim();
+    Au.say(`Bite time${kid ? ', ' + kid : ''}! Mochi, Sprinkles, Pudding.`);
+    [Au.voiceURI, Au.pitch] = prev;
+  };
 
   function renderManage() {
     $('#g-rooms').innerHTML = St.data.book.length
@@ -544,6 +593,7 @@
   function boot() {
     St.load();
     Au.muted = !!St.data.settings.mute;
+    applyVoice();
     BT.checkContent();
     goWho(true);
     document.addEventListener('pointerdown', () => Au.unlock(), { capture: true });

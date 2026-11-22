@@ -7,7 +7,7 @@
 
   const fresh = () => ({
     v: 1,
-    settings: { dur: 15, mute: false, cue: false, remind: true, kid: '' },
+    settings: { dur: 15, mute: false, cue: false, remind: true, kid: '', babble: true, voice: '', pitch: 1.1 },
     current: null,   // tonight's room, while dinner is going
     book: [],        // finished rooms, newest first
     recent: []       // creatures picked lately, so the four choices vary

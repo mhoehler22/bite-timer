@@ -4,6 +4,7 @@
 
   BT.addCreature({
     id: 'puppy', label: 'Puppy', home: 'bakery', color: 'butter', sound: 'boop',
+    voice: { pitch: 460, wave: 'square', speed: 1.1, formant: 1300 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

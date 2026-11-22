@@ -4,6 +4,8 @@
   const D = BT.decorator = {};
 
   D.PET_CHANCE = 0.35;        // share of rewards that are visiting friends
+  D.BIG_WEIGHT = 2.5;         // big furniture is favored while its spots are free
+  D.FURNITURE_BY = 4;         // the first big piece of furniture is guaranteed by this bite
   D.DECOR_SIZE = 1.3;         // decorations drawn bigger than their spot's base size, for little fingers on a phone
   D.AIR_MAX = 40;             // once spots are full, floaty things fill the air up to this many
   D.SLOTH_ODDS = [0, 0.35, 0.6, 1]; // chance of a visiting sloth on bite 1, 2, 3 (the sloth guarantee from the original design)
@@ -63,7 +65,7 @@
     room.items.forEach(i => { if (i.t === 'decor') counts[i.id] = (counts[i.id] || 0) + 1; });
     const list = BT.decorFor(home.id).filter(d => d.anchors.some(a => anchorsFree.has(a)));
     if (!list.length) return null;
-    const d = U.weighted(list, d => (d.homes ? 2.2 : 1) * Math.pow(0.35, counts[d.id] || 0), r);
+    const d = U.weighted(list, d => (d.anchors.includes('big') ? D.BIG_WEIGHT : d.homes ? 2.2 : 1) * Math.pow(0.35, counts[d.id] || 0), r);
     const c = U.pick(A.DECOR, r);
     return { t: 'decor', id: d.id, anchors: d.anchors, c, c2: A.accentFor(c, U.pick(A.DECOR, r)), scale: d.scale * D.DECOR_SIZE };
   }
@@ -79,6 +81,8 @@
       const b = room.bites;
       const slothOdds = D.SLOTH_ODDS[Math.min(b, D.SLOTH_ODDS.length - 1)];
       if (!room.slothSeen && b >= 1 && r() < slothOdds) it = petFor('sloth', anchorsFree, r);
+      // Big furniture guarantee: the first piece arrives by bite FURNITURE_BY (if the home has a big spot).
+      if (!it && b >= D.FURNITURE_BY && anchorsFree.has('big') && !room.items.some(i => i.a === 'big')) it = decorFor(home, new Set(['big']), room, r);
       if (!it && r() < D.PET_CHANCE) it = petFor(U.pick(Object.keys(BT.creatures), r), anchorsFree, r);
       if (!it) it = decorFor(home, anchorsFree, room, r);
       if (it) {

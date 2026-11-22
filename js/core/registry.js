@@ -10,6 +10,7 @@
 
   /* A creature:
      { id, label, home: '<home id>', color: '<default color id>', sound: '<audio name>',
+       voice: { pitch, wave, speed, formant, sparkle, growl } (its babble voice),
        poses: { sit: { anchors: ['floor','shelf'], draw(p) }, ...more poses } }
      Poses draw with the origin at the bottom center (feet on y=0), except a pose whose
      anchors are ['hang'], which draws from its hands at y=0 downward. */
@@ -17,6 +18,7 @@
     if (!def.id || !def.poses || !def.poses.sit) { problems.push('creature missing id or sit pose: ' + def.id); return; }
     def.sound = def.sound || 'boop';
     def.color = def.color || 'pink';
+    def.voice = def.voice || { pitch: 500, wave: 'triangle', speed: 1, formant: 1500 };
     BT.creatures[def.id] = def;
   };
 

@@ -5,6 +5,7 @@
 
   BT.addCreature({
     id: 'bunny', label: 'Bunny', home: 'garden', color: 'cream', sound: 'squeak',
+    voice: { pitch: 780, wave: 'triangle', speed: 1.3, formant: 2200 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

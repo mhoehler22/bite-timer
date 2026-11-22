@@ -162,7 +162,18 @@
     </label>
     <label class="tog"><input type="checkbox" id="g-sound"> Sounds</label>
     <label class="tog"><input type="checkbox" id="g-remind"> Gentle reminder chime if she waits</label>
-    <label class="tog"><input type="checkbox" id="g-cue"> Say "Bite time!" out loud</label>
+    <label class="tog"><input type="checkbox" id="g-babble"> Creatures babble in their own cute voices</label>
+    <label class="tog"><input type="checkbox" id="g-cue"> Also say "Bite time!" in the reading voice</label>
+    <div class="g-sec">
+      <label class="field">Reading voice (names and letters)
+        <select id="g-voice"></select>
+      </label>
+      <label class="field">Voice pitch
+        <input type="range" id="g-pitch" min="0.8" max="1.6" step="0.05">
+      </label>
+      <button class="gbtn" id="g-test" type="button">🔊 Test the voice</button>
+      <p class="small"><b>iPhone tip:</b> nicer voices are a free download. Settings → Accessibility → Spoken Content → Voices → English, then download one marked <b>Enhanced</b> or <b>Premium</b> (try Ava or Zoe). If it shows up in the list above, pick it.</p>
+    </div>
     <div class="g-sec">
       <div class="g-row"><span>My Rooms: <b id="g-count">0</b> saved</span><button class="gbtn" id="g-manage" type="button">Manage</button></div>
       <div id="g-rooms" class="g-rooms" hidden></div>
@@ -204,6 +215,7 @@
 <script src="js/creatures/dragon.js"></script>
 <!-- decorations that go anywhere -->
 <script src="js/decor/shared.js"></script>
+<script src="js/decor/furniture.js"></script>
 <!-- homes (each with its own decorations): one file each -->
 <script src="js/homes/treehouse.js"></script>
 <script src="js/homes/livingroom.js"></script>

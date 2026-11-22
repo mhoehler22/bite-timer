@@ -4,7 +4,7 @@
   const A = BT.art, n = A.n;
   const S = BT.scene = {};
   const NS = 'http://www.w3.org/2000/svg';
-  const LAYER = { wall: 1, hang: 2, air: 3, shelf: 4, floor: 5 };
+  const LAYER = { wall: 1, hang: 2, air: 3, shelf: 4, floor: 5, big: 5 };
 
   S.z = it => (LAYER[it.a] || 5) * 1000 + it.y;
 

@@ -4,6 +4,7 @@
 
   BT.addCreature({
     id: 'penguin', label: 'Penguin', home: 'snow', color: 'sky', sound: 'peep',
+    voice: { pitch: 720, wave: 'square', speed: 1.2, formant: 2300 }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],

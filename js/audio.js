@@ -144,17 +144,104 @@
     (tap[name] || tap.chime)(t + 0.01);
   });
 
-  // Spoken words: names, and the optional "Bite time!" cue.
+  /* ---------- the reading voice (names, letters, optional "Bite time!") ----------
+     Uses the phone's own text-to-speech. We pick the most natural-sounding voice installed:
+     "Premium"/"Enhanced" (iPhone downloads) and "Natural"/"Neural" (Edge, Android) voices first,
+     and never Apple's novelty voices unless a grown-up picks one. */
+  S.voiceURI = '';   // grown-up's choice; '' = automatic
+  S.pitch = 1.1;
+  const NOVELTY = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Good News|Hysterical|Jester|Junior|Organ|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred\b|Kathy|Grandpa|Grandma|Rocko|Eddy|Flo|Reed|Sandy|Shelley/i;
+  S.voiceScore = v => {
+    const n = v.name || '';
+    let s = 0;
+    if (/premium/i.test(n)) s += 8;
+    if (/enhanced/i.test(n)) s += 6;
+    if (/natural|neural/i.test(n)) s += 6;
+    if (/\bAna\b/.test(n)) s += 3; // a child's voice on Windows/Edge
+    if (/Ava|Zoe|Samantha|Allison|Susan|Nicky|Aria|Jenny|Emma|Michelle|Zira|Karen|Moira|Tessa|Google US English/i.test(n)) s += 2;
+    if (/David|Mark|Daniel|Alex\b|Aaron|Arthur|Gordon|Rishi|Tom\b|Guy|Ryan|Christopher|Eric|Roger|Thomas|Oliver|Evan|Nathan/i.test(n)) s -= 1;
+    if (/en[-_]US/i.test(v.lang)) s += 1;
+    if (NOVELTY.test(n)) s -= 30;
+    return s;
+  };
+  S.voices = () => {
+    if (!('speechSynthesis' in window)) return [];
+    return speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)).sort((a, b) => S.voiceScore(b) - S.voiceScore(a));
+  };
+  S.voice = () => {
+    const list = S.voices();
+    return (S.voiceURI && list.find(v => v.voiceURI === S.voiceURI)) || list[0] || null;
+  };
+
   S.say = (text, opts = {}) => {
-    if (S.muted || !('speechSynthesis' in window)) return;
+    if (S.muted || !('speechSynthesis' in window)) { if (opts.onend) opts.onend(); return; }
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = opts.rate || 0.92; u.pitch = opts.pitch || 1.3; u.volume = 1;
-      const voices = speechSynthesis.getVoices();
-      const v = voices.find(v => /en[-_]US/i.test(v.lang) && /Samantha|Google US English|Aria|Jenny/i.test(v.name)) || voices.find(v => /^en/i.test(v.lang));
-      if (v) u.voice = v;
+      const v = S.voice();
+      if (v) { u.voice = v; u.lang = v.lang; }
+      u.rate = opts.rate || 0.95;
+      u.pitch = opts.pitch || S.pitch;
+      u.volume = 1;
+      if (opts.onend) { let done = false; const fin = () => { if (!done) { done = true; opts.onend(); } }; u.onend = fin; u.onerror = fin; setTimeout(fin, 2500); }
       speechSynthesis.speak(u);
-    } catch (e) { /* speech isn't available everywhere */ }
+    } catch (e) { if (opts.onend) opts.onend(); }
+  };
+
+  /* ---------- creature babble ----------
+     Each creature "talks" in a made-up squeaky language, like animals in a cozy video game:
+     short pitched syllables shaped by a vowel-like filter. Its voice comes from the creature
+     file (pitch, wave, speed, formant, sparkle, growl). Moods: hello, happy, excited, question, sleepy. */
+  const VOWEL = [0.62, 0.8, 1, 1.3, 1.65]; // u, o, a, e, i
+  function syllable(v, f, t, len, form, vol, fall) {
+    const o = ctx.createOscillator();
+    o.type = v.wave || 'triangle';
+    o.frequency.setValueAtTime(f * 0.93, t);
+    o.frequency.linearRampToValueAtTime(f * 1.04, t + len * 0.35);
+    o.frequency.linearRampToValueAtTime(f * (fall ? 0.86 : 0.98), t + len);
+    if (v.growl) {
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.frequency.value = 32; lg.gain.value = f * 0.05;
+      lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + len + 0.05);
+    }
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = form; bp.Q.value = 2.4;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(5000, form * 2.4);
+    const body = ctx.createGain(); body.gain.value = 0.55;
+    const g = ctx.createGain();
+    const loud = vol * (v.wave === 'square' ? 0.55 : v.wave === 'sawtooth' ? 0.5 : 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(loud, t + 0.012);
+    g.gain.setValueAtTime(loud, t + len * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(bp).connect(g);
+    o.connect(lp).connect(body).connect(g);
+    g.connect(master);
+    o.start(t); o.stop(t + len + 0.05);
+  }
+  S.babbleOn = true;
+  S.babble = (voice, o = {}) => {
+    if (!S.babbleOn) return;
+    play(t0 => {
+      const v = Object.assign({ pitch: 500, wave: 'triangle', speed: 1, formant: 1500 }, voice || {});
+      const mood = o.mood || 'happy';
+      const n = o.n || (mood === 'excited' ? 5 : mood === 'sleepy' ? 4 : 3);
+      const sp = v.speed * (mood === 'excited' ? 1.3 : mood === 'sleepy' ? 0.55 : 1);
+      const base = v.pitch * (mood === 'excited' ? 1.2 : mood === 'sleepy' ? 0.82 : 1);
+      let t = t0 + 0.02;
+      for (let i = 0; i < n; i++) {
+        const last = i === n - 1;
+        let semis = Math.random() * 7 - 3.5;
+        if (last && (mood === 'happy' || mood === 'hello' || mood === 'excited')) semis += 5;
+        if (last && mood === 'question') semis += 8;
+        if (mood === 'hello' && i === 0) semis += 3;
+        if (mood === 'sleepy') semis -= i * 1.6;
+        const f = base * Math.pow(2, semis / 12);
+        const len = (0.09 / sp) * (last ? 1.7 : 1) * (0.85 + Math.random() * 0.3);
+        const form = v.formant * VOWEL[Math.floor(Math.random() * VOWEL.length)];
+        syllable(v, f, t, len, form, (o.vol || 0.3), mood === 'sleepy' && last);
+        t += len + 0.035 / sp;
+      }
+      if (v.sparkle && mood !== 'sleepy') ['E7', 'C7', 'E7'].forEach((nm, i) => tine(N[nm], t + i * 0.06, 0.07, 0.5));
+    });
   };
 })(window.BT);

@@ -5,6 +5,7 @@
 
   BT.addCreature({
     id: 'dragon', label: 'Dragon', home: 'castle', color: 'aqua', sound: 'rawr',
+    voice: { pitch: 240, wave: 'sawtooth', speed: 0.95, formant: 900, growl: true }, // babble voice (see audio.js)
     poses: {
       sit: {
         anchors: ['floor', 'shelf'],
